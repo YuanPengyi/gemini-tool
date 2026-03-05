@@ -32,7 +32,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/yourusername/gemini-tool.git
+git clone https://github.com/YuanPengyi/gemini-tool.git
 cd gemini-tool
 ```
 
