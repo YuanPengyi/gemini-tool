@@ -121,7 +121,7 @@ if __name__ == "__main__":
     # chat_with_text(model, "用Python实现快速排序")
 
     # 2. 多轮对话（交互式）
-    multi_turn_chat(model)
+    # multi_turn_chat(model)
 
     # 3. 多轮对话（编程式）
     # messages = ["你好", "介绍一下Python", "它有什么优点"]
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # multi_turn_image_generation()
 
     # 多轮视频生成（持续迭代优化）
-    # multi_turn_video_generation()
+    multi_turn_video_generation()
     
     # 验证模块加载成功
     print("\n✓ 所有模块加载成功！")

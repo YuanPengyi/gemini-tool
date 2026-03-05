@@ -106,7 +106,7 @@ def generate_video(prompt: str, output_path: str = "output.mp4") -> None:
         output_path: 输出视频保存路径
     """
     try:
-        video_model = genai.GenerativeModel("veo-2.0-generate-002")
+        video_model = genai.GenerativeModel("veo-2.0-generate-001")
 
         response = video_model.generate_content(prompt)
 
@@ -133,7 +133,7 @@ def generate_image_to_video(image_path: str, prompt: str = "") -> None:
         prompt: 可选，附加文本描述
     """
     try:
-        video_model = genai.GenerativeModel("veo-2.0-generate-002")
+        video_model = genai.GenerativeModel("veo-2.0-generate-001")
 
         # 加载图片
         uploaded_image = genai.upload_file(path=image_path)
@@ -164,7 +164,7 @@ def generate_image_with_video(prompt: str, image_paths: Optional[list[str]] = No
         image_paths: 输入图片路径列表
     """
     try:
-        video_model = genai.GenerativeModel("veo-2.0-generate-002")
+        video_model = genai.GenerativeModel("veo-2.0-generate-001")
 
         contents = []
 

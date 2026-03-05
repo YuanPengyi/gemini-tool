@@ -162,7 +162,7 @@ def multi_turn_video_generation() -> None:
     print("  - 'exit' 退出")
     print("=" * 60)
 
-    video_model = genai.GenerativeModel("veo-2.0-generate-002")
+    video_model = genai.GenerativeModel("veo-2.0-generate-001")
     generation_history = []
     version = 0
     base_image = None

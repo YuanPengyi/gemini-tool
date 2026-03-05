@@ -2,18 +2,22 @@
 
 ## 问题描述
 
-遇到错误：`404 models/gemini-1.5-pro is not found for API version v1beta`
+遇到以下错误：
+- `404 models/gemini-1.5-pro is not found for API version v1beta`
+- `404 models/veo-2.0-generate-002 is not found for API version v1beta`
 
 ## 原因分析
 
-1. **API 已更新**：Google Gemini API 已升级，`gemini-1.5-pro` 模型名称已不再支持
+1. **API 已更新**：Google Gemini API 已升级，旧模型名称已不再支持
+   - 对话模型：`gemini-1.5-pro` → `gemini-2.5-flash`
+   - 视频模型：`veo-2.0-generate-002` → `veo-2.0-generate-001`
 2. **SDK 警告**：`google.generativeai` 包已停止维护，建议迁移到 `google.genai`
 
 ## 解决方案
 
 ### ✅ 已修复
 
-已将模型更新为 `gemini-2.5-flash`：
+**1. 对话模型更新**：
 
 ```python
 model = genai.GenerativeModel(
@@ -23,9 +27,21 @@ model = genai.GenerativeModel(
 )
 ```
 
+**2. 视频模型更新**：
+
+```python
+video_model = genai.GenerativeModel("veo-2.0-generate-001")  # 从 002 → 001
+```
+
+**3. 图像模型**（无需修改）：
+
+```python
+image_model = genai.GenerativeModel("imagen-3.0-generate-002")  # 正常
+```
+
 ### 📋 当前可用模型（2026-03）
 
-**推荐使用的模型**：
+**对话模型**：
 
 | 模型名称 | 特点 | 使用场景 |
 |---------|------|---------|
@@ -33,6 +49,13 @@ model = genai.GenerativeModel(
 | `gemini-2.5-pro` | 💪 功能强大、精度高 | 复杂任务、高质量输出 |
 | `gemini-2.0-flash` | ⚡ 超快速响应 | 简单查询、实时交互 |
 | `gemini-pro-latest` | 🎯 自动使用最新版本 | 保持最新功能 |
+
+**生成模型**：
+
+| 模型名称 | 类型 | 状态 |
+|---------|------|------|
+| `imagen-3.0-generate-002` | 图像生成 | ✅ 正常 |
+| `veo-2.0-generate-001` | 视频生成 | ✅ 已更新 |
 
 ### 🔄 如何切换模型
 
@@ -91,14 +114,23 @@ pip install google-genai
 
 ## 📝 更新日志
 
-### 2026-03-05
-- ✅ 修复模型 404 错误
+### 2026-03-05 (v2)
+- ✅ 修复视频模型 404 错误
+- ✅ 更新为 `veo-2.0-generate-001`
+- ✅ 更新文档说明
+
+### 2026-03-05 (v1)
+- ✅ 修复对话模型 404 错误
 - ✅ 更新为 `gemini-2.5-flash`
 - ✅ 添加模型说明文档
 - ✅ 优化免费额度使用
 
 ---
 
-**问题已解决** ✅  
-当前使用模型：`gemini-2.5-flash`  
-状态：正常运行
+**所有问题已解决** ✅  
+**当前使用模型**：
+- 对话：`gemini-2.5-flash`
+- 图像：`imagen-3.0-generate-002`  
+- 视频：`veo-2.0-generate-001`
+
+**状态**：✅ 正常运行
