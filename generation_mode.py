@@ -18,7 +18,7 @@ def generate_image(prompt: str, output_path: str = "output.png") -> None:
     """
     文生图 (Text-to-Image) - 单次生成
 
-    使用 Imagen 3.0 模型生成图片
+    使用 Gemini 2.5 Flash Image 模型生成图片
 
     参数:
         prompt: 文本描述 prompt
@@ -26,7 +26,7 @@ def generate_image(prompt: str, output_path: str = "output.png") -> None:
     """
     try:
         # 使用图像生成专用模型
-        image_model = genai.GenerativeModel("imagen-3.0-generate-002")
+        image_model = genai.GenerativeModel("gemini-2.5-flash-image")
 
         # 生成图片
         response = image_model.generate_content(
@@ -64,7 +64,7 @@ def generate_image_from_image(prompt: str, reference_image_path: str, output_pat
         output_path: 输出图片保存路径
     """
     try:
-        image_model = genai.GenerativeModel("imagen-3.0-generate-002")
+        image_model = genai.GenerativeModel("gemini-2.5-flash-image")
 
         # 加载参考图片
         uploaded_image = genai.upload_file(path=reference_image_path)

@@ -40,7 +40,7 @@ def multi_turn_image_generation() -> None:
     print("  - 'exit' 退出")
     print("=" * 60)
 
-    image_model = genai.GenerativeModel("imagen-3.0-generate-002")
+    image_model = genai.GenerativeModel("gemini-2.5-flash-image")
     current_image = None
     generation_history = []
     version = 0
