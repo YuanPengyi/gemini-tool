@@ -317,9 +317,9 @@ gemini-tool/
 | 💬 对话 | `gemini-2.5-flash` | ⚡ 速度快、免费额度高（推荐） |
 | 💬 对话 | `gemini-2.5-pro` | 💪 功能强大、高精度输出 |
 | 🎨 图像 | `gemini-2.5-flash-image` | 多模态图像生成（支持 generateContent） |
-| 🎬 视频 | ~~`veo-2.0-generate-001`~~ | ❌ 已禁用（API 已变更） |
+| 🎬 视频 | `veo-3.1-generate-preview` | 🎥 视频生成（支持音频、扩展功能） |
 
-> ⚠️ **视频生成功能已禁用**：Veo API 已改用 `predictLongRunning` 异步方法，不再支持 `generateContent`
+> ✅ **视频生成已重新实现**：使用新的 `google.genai` SDK，支持完整的视频生成功能
 > 
 > 💡 **最新更新**：对话和图像生成模型已升级到最新版本
 > 

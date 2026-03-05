@@ -15,9 +15,12 @@
    - 图像模型：`imagen-3.0-generate-002` → `gemini-2.5-flash-image`
    - **视频模型**：⚠️ **所有 Veo 模型已不再支持 `generateContent` 方法**
 2. **视频生成 API 重大变更**：
-   - Veo 2.0/3.0/3.1 所有版本改用 `predictLongRunning` 异步方法
-   - 需要完全重写视频生成代码才能支持
-3. **SDK 警告**：`google.generativeai` 包已停止维护，建议迁移到 `google.genai`
+   - Veo 2.0/3.0/3.1 所有版本改用异步 API
+   - 需要使用新的 `google.genai` SDK（替代 `google.generativeai`）
+   - 使用 `client.models.generate_videos()` 和 `client.operations.get()` 进行异步操作
+3. **SDK 更新**：
+   - `google.generativeai` 包已停止维护
+   - 视频生成必须使用 `google.genai` 新包
 
 ## 解决方案
 
@@ -33,21 +36,46 @@ model = genai.GenerativeModel(
 )
 ```
 
-**2. 视频模型更新**：
+**2. 视频模型更新**（已重写）：
 
 ```python
-# ❌ 所有 Veo 模型已不再支持 generateContent
-# video_model = genai.GenerativeModel("veo-2.0-generate-001")
-# video_model = genai.GenerativeModel("veo-3.0-generate-001")
+# ✅ 使用新的 google.genai SDK
+from google import genai
+from google.genai import types
+import time
 
-# ⚠️ 新 API 需要使用 predictLongRunning 异步方法
-# 当前版本暂时禁用视频生成功能
+client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+
+# 发起视频生成请求
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-preview",
+    prompt="A beautiful sunset over the ocean",
+    config=types.GenerateVideosConfig(
+        aspect_ratio="16:9",
+        resolution="720p",
+    ),
+)
+
+# 轮询操作状态
+while not operation.done:
+    time.sleep(10)
+    operation = client.operations.get(operation)
+
+# 下载视频
+video = operation.response.generated_videos[0]
+client.files.download(file=video.video)
+video.video.save("output.mp4")
 ```
 
 **视频生成功能状态**：
-- ❌ 已禁用：所有 `generate_video*` 函数
-- 原因：Veo API 完全改用异步调用，需要重写实现
-- 可用模型：`veo-3.1-fast-generate-preview`, `veo-3.0-generate-001`（需新 API）
+- ✅ 已重写：所有视频生成函数已使用新 API
+- ✅ 支持功能：
+  - 文生视频（8秒，支持音频）
+  - 图生视频
+  - 多图参考生成
+  - 视频扩展（每次7秒，最多20次）
+  - 多轮迭代生成
+- 模型：`veo-3.1-generate-preview`
 
 **3. 图像模型更新**：
 

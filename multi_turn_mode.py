@@ -5,8 +5,11 @@
 支持：多轮图片生成、多轮视频生成（迭代优化）
 """
 
-import google.generativeai as genai
+import google.generativeai as genai  # 用于图像生成
+from google import genai as new_genai  # 用于视频生成
+from google.genai import types
 import os
+import time
 
 
 # ============================================================================
@@ -143,62 +146,52 @@ def multi_turn_video_generation() -> None:
     多轮视频生成（交互式迭代优化）
 
     功能特性：
-    - 持续优化视频生成
-    - 基于上一个视频或图片进行调整
-    - 支持图生视频和文生视频
+    - 持续优化视频生成（基于视频扩展功能）
+    - 从图片开始或文本开始生成视频
+    - 每次可扩展 7 秒（最多 20 次）
+    - 支持调整提示词进行优化
 
     命令：
-    - 输入描述词生成/优化视频
+    - 输入描述词生成/扩展视频
     - 'image <路径>' - 从图片开始生成视频
     - 'history' - 查看生成历史
     - 'exit' - 退出
-    
-    ⚠️ 当前状态：功能已禁用，Veo API 已变更
     """
-    print("=" * 60)
-    print("❌ 多轮视频生成功能暂时不可用")
-    print("=" * 60)
-    print("\n⚠️  Veo API 已更新，视频生成需要使用新的异步调用方式")
-    print("\n💡 当前可用的视频模型（需要新的 API 调用）：")
-    print("   • veo-3.1-fast-generate-preview")
-    print("   • veo-3.0-generate-001")
-    print("\n📖 这些模型使用 predictLongRunning 方法，暂未集成")
-    print("=" * 60)
-    return
-    
-    # 旧实现（已废弃）
-    """
-    print("=" * 60)
-    print("多轮视频生成模式")
+    print("=" * 70)
+    print("🎬 多轮视频生成模式 (Veo 3.1)")
+    print("=" * 70)
     print("命令提示:")
-    print("  - 输入描述词生成视频")
+    print("  - 输入描述词生成/扩展视频")
     print("  - 'image <路径>' 从图片生成视频")
     print("  - 'history' 查看生成历史")
     print("  - 'exit' 退出")
-    print("=" * 60)
+    print("=" * 70)
 
-    video_model = genai.GenerativeModel("veo-2.0-generate-001")
+    # 初始化客户端
+    client = new_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+    
     generation_history = []
     version = 0
-    base_image = None
+    current_video_path = None
+    start_with_image = None
 
     while True:
         try:
-            user_input = input("\n描述/调整: ").strip()
+            user_input = input("\n🎬 描述/调整: ").strip()
 
             # 处理退出
             if user_input.lower() in ['exit', 'quit', '退出']:
                 print(f"\n生成结束，共生成 {version} 个版本")
                 break
 
-            # 设置基础图片
+            # 设置起始图片
             if user_input.lower().startswith('image '):
                 image_path = user_input[6:].strip()
                 if os.path.exists(image_path):
-                    base_image = image_path
-                    print(f"✓ 已设置基础图片: {base_image}")
+                    start_with_image = image_path
+                    print(f"✅ 已设置起始图片: {start_with_image}")
                 else:
-                    print("图片不存在")
+                    print("❌ 图片不存在")
                 continue
 
             # 查看历史
@@ -206,7 +199,8 @@ def multi_turn_video_generation() -> None:
                 if generation_history:
                     print("\n=== 生成历史 ===")
                     for i, record in enumerate(generation_history, 1):
-                        print(f"{i}. {record['prompt'][:50]}... -> {record['uri']}")
+                        print(f"{i}. [{record['type']}] {record['prompt'][:40]}...")
+                        print(f"   保存路径: {record['path']}")
                 else:
                     print("暂无历史记录")
                 continue
@@ -215,36 +209,92 @@ def multi_turn_video_generation() -> None:
                 print("请输入描述或调整需求")
                 continue
 
-            # 生成视频
+            # 生成/扩展视频
             version += 1
+            output_path = f"video_v{version}.mp4"
+            
             print(f"\n[版本 {version}] 生成中（视频生成较慢，请耐心等待）...")
 
-            contents = []
-            if base_image:
-                uploaded_image = genai.upload_file(path=base_image)
-                contents.append(uploaded_image)
-
-            contents.append(user_input)
-
-            response = video_model.generate_content(contents)
-
-            if response.generated_videos:
-                video_uri = response.generated_videos[0].uri
-                generation_history.append({
-                    "version": version,
-                    "prompt": user_input,
-                    "uri": video_uri
-                })
-                print(f"✓ [版本 {version}] 视频生成成功")
-                print(f"  视频URI: {video_uri}")
+            if current_video_path:
+                # 扩展现有视频
+                print("📹 基于上一个视频进行扩展...")
+                uploaded_video = client.files.upload(path=current_video_path)
+                
+                operation = client.models.generate_videos(
+                    model="veo-3.1-generate-preview",
+                    video=uploaded_video,
+                    prompt=user_input,
+                    config=types.GenerateVideosConfig(
+                        resolution="720p"  # 扩展必须使用 720p
+                    ),
+                )
+                video_type = "扩展"
+                
+            elif start_with_image:
+                # 从图片生成
+                print("🖼️  从图片生成视频...")
+                uploaded_image = client.files.upload(path=start_with_image)
+                
+                operation = client.models.generate_videos(
+                    model="veo-3.1-generate-preview",
+                    prompt=user_input,
+                    image=uploaded_image,
+                    config=types.GenerateVideosConfig(
+                        aspect_ratio="16:9",
+                        resolution="720p",
+                    ),
+                )
+                video_type = "图生视频"
+                start_with_image = None  # 用过后清除
+                
             else:
-                print("✗ 生成失败")
-                version -= 1
+                # 从文本生成
+                print("📝 从文本生成视频...")
+                operation = client.models.generate_videos(
+                    model="veo-3.1-generate-preview",
+                    prompt=user_input,
+                    config=types.GenerateVideosConfig(
+                        aspect_ratio="16:9",
+                        resolution="720p",
+                    ),
+                )
+                video_type = "文生视频"
+
+            # 轮询操作状态
+            wait_count = 0
+            while not operation.done:
+                wait_count += 1
+                if wait_count % 3 == 0:
+                    print(f"   已等待 {wait_count * 10} 秒...")
+                time.sleep(10)
+                operation = client.operations.get(operation)
+
+            # 下载视频
+            generated_video = operation.response.generated_videos[0]
+            client.files.download(file=generated_video.video)
+            generated_video.video.save(output_path)
+            
+            current_video_path = output_path  # 保存路径供下次扩展使用
+            
+            generation_history.append({
+                "version": version,
+                "type": video_type,
+                "prompt": user_input,
+                "path": output_path
+            })
+            
+            print(f"✅ [版本 {version}] 视频生成成功！")
+            print(f"  类型: {video_type}")
+            print(f"  保存路径: {output_path}")
+            if version < 20:
+                print(f"  💡 可以继续输入描述扩展视频（剩余 {20 - version} 次）")
+            else:
+                print("  ⚠️  已达到最大扩展次数（20次）")
 
         except KeyboardInterrupt:
             print(f"\n\n生成中断，共生成 {version} 个版本")
             break
         except Exception as e:
-            print(f"出错: {e}")
+            print(f"❌ 出错: {e}")
             version -= 1
             continue
