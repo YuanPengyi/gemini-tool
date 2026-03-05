@@ -5,15 +5,19 @@
 遇到以下错误：
 - `404 models/gemini-1.5-pro is not found for API version v1beta`
 - `404 models/veo-2.0-generate-002 is not found for API version v1beta`
+- `404 models/veo-2.0-generate-001 is not found for API version v1beta`
 - `404 models/imagen-3.0-generate-002 is not found for API version v1beta`
 
 ## 原因分析
 
 1. **API 已全面更新**：Google Gemini API 已升级，旧模型名称全部不再支持
    - 对话模型：`gemini-1.5-pro` → `gemini-2.5-flash`
-   - 视频模型：`veo-2.0-generate-002` → `veo-2.0-generate-001`
    - 图像模型：`imagen-3.0-generate-002` → `gemini-2.5-flash-image`
-2. **SDK 警告**：`google.generativeai` 包已停止维护，建议迁移到 `google.genai`
+   - **视频模型**：⚠️ **所有 Veo 模型已不再支持 `generateContent` 方法**
+2. **视频生成 API 重大变更**：
+   - Veo 2.0/3.0/3.1 所有版本改用 `predictLongRunning` 异步方法
+   - 需要完全重写视频生成代码才能支持
+3. **SDK 警告**：`google.generativeai` 包已停止维护，建议迁移到 `google.genai`
 
 ## 解决方案
 
@@ -32,8 +36,18 @@ model = genai.GenerativeModel(
 **2. 视频模型更新**：
 
 ```python
-video_model = genai.GenerativeModel("veo-2.0-generate-001")  # 从 002 → 001
+# ❌ 所有 Veo 模型已不再支持 generateContent
+# video_model = genai.GenerativeModel("veo-2.0-generate-001")
+# video_model = genai.GenerativeModel("veo-3.0-generate-001")
+
+# ⚠️ 新 API 需要使用 predictLongRunning 异步方法
+# 当前版本暂时禁用视频生成功能
 ```
+
+**视频生成功能状态**：
+- ❌ 已禁用：所有 `generate_video*` 函数
+- 原因：Veo API 完全改用异步调用，需要重写实现
+- 可用模型：`veo-3.1-fast-generate-preview`, `veo-3.0-generate-001`（需新 API）
 
 **3. 图像模型更新**：
 
@@ -123,6 +137,12 @@ pip install google-genai
 
 ## 📝 更新日志
 
+### 2026-03-05 (v4) 🔴
+- ❌ 禁用视频生成功能
+- ⚠️  Veo API 已完全改变，不再支持 generateContent
+- 📝 更新所有视频生成函数，添加已禁用提示
+- 💡 提供新 API 使用说明
+
 ### 2026-03-05 (v3) ✨
 - ✅ 修复图像模型 404 错误
 - ✅ 更新为 `gemini-2.5-flash-image`
@@ -142,10 +162,13 @@ pip install google-genai
 
 ---
 
-**所有问题已解决** ✅  
+**当前可用功能** ✅  
 **当前使用模型**：
-- 对话：`gemini-2.5-flash`
-- 图像：`gemini-2.5-flash-image` ⭐ 新更新
-- 视频：`veo-2.0-generate-001`
+- 对话：`gemini-2.5-flash` ✅
+- 图像：`gemini-2.5-flash-image` ✅
+- 视频：❌ 已禁用（API 已变更）
 
-**状态**：✅ 所有模型检查通过！
+**状态**：
+- ✅ 对话功能正常
+- ✅ 图像生成正常
+- ❌ 视频生成已禁用（等待新 API 实现）

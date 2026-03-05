@@ -23,7 +23,7 @@ print(f'\n✓ API 当前可用模型总数: {len(available_models)}\n')
 project_models = {
     '对话模型': ['gemini-2.5-flash', 'gemini-2.5-pro'],
     '图像模型': ['gemini-2.5-flash-image'],
-    '视频模型': ['veo-2.0-generate-001']
+    '视频模型': []  # Veo 已不再支持 generateContent，功能已禁用
 }
 
 print('检查项目使用的模型：\n')

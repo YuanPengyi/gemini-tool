@@ -124,63 +124,56 @@ def generate_video(prompt: str, output_path: str = "output.mp4") -> None:
 
 def generate_image_to_video(image_path: str, prompt: str = "") -> None:
     """
-    图生视频 (Image-to-Video)
-
-    将静态图片转换为动态视频
-
+    图生视频 (Image-to-Video) - 已禁用
+    
+    ⚠️ API 已变更：Veo 模型不再支持 generateContent
+    
     参数:
         image_path: 输入图片路径
         prompt: 可选，附加文本描述
     """
-    try:
-        video_model = genai.GenerativeModel("veo-2.0-generate-001")
-
-        # 加载图片
-        uploaded_image = genai.upload_file(path=image_path)
-
-        # 组合输入
-        contents = [uploaded_image]
-        if prompt:
-            contents.append(prompt)
-
-        response = video_model.generate_content(contents)
-
-        print(f"✓ 图生视频生成中，请等待...")
-        if response.generated_videos:
-            print(f"  视频URI: {response.generated_videos[0].uri}")
-
-    except Exception as e:
-        print(f"调用出错: {e}")
+    print("❌ 图生视频功能暂时不可用")
+    print("⚠️  Veo API 已更新，需要使用新的异步调用方式")
+    return
+    
+    # 旧实现（已废弃）
+    # 旧实现（已废弃）
+    # try:
+    #     video_model = genai.GenerativeModel("veo-2.0-generate-001")
+    #     uploaded_image = genai.upload_file(path=image_path)
+    #     contents = [uploaded_image]
+    #     if prompt:
+    #         contents.append(prompt)
+    #     response = video_model.generate_content(contents)
+    #     print(f"✓ 图生视频生成中，请等待...")
+    #     if response.generated_videos:
+    #         print(f"  视频URI: {response.generated_videos[0].uri}")
+    # except Exception as e:
+    #     print(f"调用出错: {e}")
 
 
 def generate_image_with_video(prompt: str, image_paths: Optional[list[str]] = None) -> None:
     """
-    图文生视频 (Image+Text-to-Video)
-
-    结合图片和文本描述生成视频
-
+    图文生视频 (Image+Text-to-Video) - 已禁用
+    
+    ⚠️ API 已变更：Veo 模型不再支持 generateContent
+    
     参数:
         prompt: 文本描述 prompt
         image_paths: 输入图片路径列表
     """
-    try:
-        video_model = genai.GenerativeModel("veo-2.0-generate-001")
-
-        contents = []
-
-        # 添加所有图片
-        if image_paths:
-            for img_path in image_paths:
-                contents.append(genai.upload_file(path=img_path))
-
-        # 添加文本提示
-        contents.append(prompt)
-
-        response = video_model.generate_content(contents)
-
-        print(f"✓ 图文生视频生成中，请等待...")
-        if response.generated_videos:
-            print(f"  视频URI: {response.generated_videos[0].uri}")
-
-    except Exception as e:
-        print(f"调用出错: {e}")
+    print("❌ 图文生视频功能暂时不可用")
+    print("⚠️  Veo API 已更新，需要使用新的异步调用方式")
+    return
+    
+    # 旧实现（已废弃）
+    # try:
+    #     video_model = genai.GenerativeModel("veo-2.0-generate-001")
+    #     contents = []
+    #     if image_paths:
+    #         for img_path in image_paths:
+    #             contents.append(genai.upload_file(path=img_path))
+    #     contents.append(prompt)
+    #     response = video_model.generate_content(contents)
+    # except Exception as e:
+    #     print(f"调用出错: {e}")

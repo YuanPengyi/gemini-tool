@@ -152,6 +152,21 @@ def multi_turn_video_generation() -> None:
     - 'image <路径>' - 从图片开始生成视频
     - 'history' - 查看生成历史
     - 'exit' - 退出
+    
+    ⚠️ 当前状态：功能已禁用，Veo API 已变更
+    """
+    print("=" * 60)
+    print("❌ 多轮视频生成功能暂时不可用")
+    print("=" * 60)
+    print("\n⚠️  Veo API 已更新，视频生成需要使用新的异步调用方式")
+    print("\n💡 当前可用的视频模型（需要新的 API 调用）：")
+    print("   • veo-3.1-fast-generate-preview")
+    print("   • veo-3.0-generate-001")
+    print("\n📖 这些模型使用 predictLongRunning 方法，暂未集成")
+    print("=" * 60)
+    return
+    
+    # 旧实现（已废弃）
     """
     print("=" * 60)
     print("多轮视频生成模式")
