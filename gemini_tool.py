@@ -81,9 +81,10 @@ def initialize_gemini():
         {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
     ]
 
-    # 创建对话模型（支持100万Token上下文）
+    # 创建对话模型
+    # 使用 Gemini 2.5 Flash - 速度快、免费额度高
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-pro",
+        model_name="gemini-2.5-flash",
         generation_config=generation_config,
         safety_settings=safety_settings,
         system_instruction="你是资深编程导师，解决复杂算法问题时步骤清晰、逻辑严谨。"
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     # chat_with_text(model, "用Python实现快速排序")
 
     # 2. 多轮对话（交互式）
-    # multi_turn_chat(model)
+    multi_turn_chat(model)
 
     # 3. 多轮对话（编程式）
     # messages = ["你好", "介绍一下Python", "它有什么优点"]
