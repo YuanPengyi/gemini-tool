@@ -17,6 +17,32 @@ load_dotenv()
 
 
 # ============================================================================
+# 辅助函数
+# ============================================================================
+
+def get_image_mime_type(file_path: str) -> str:
+    """
+    根据文件扩展名返回对应的 MIME 类型
+    
+    参数:
+        file_path: 图片文件路径
+    
+    返回:
+        MIME 类型字符串
+    """
+    ext = os.path.splitext(file_path)[1].lower()
+    mime_types = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.bmp': 'image/bmp',
+    }
+    return mime_types.get(ext, 'image/jpeg')  # 默认返回 jpeg
+
+
+# ============================================================================
 # 图片生成功能（使用新的 google.genai SDK）
 # ============================================================================
 
@@ -102,11 +128,14 @@ def generate_image_from_image(
         print(f"  参考图片: {reference_image_path}")
         print(f"  提示词: {prompt[:50]}...")
         
-        # 加载参考图片
-        reference_image = types.Image.from_file(location=reference_image_path)
+        # 上传参考图片到 API
+        print("📤 上传图片中...")
+        abs_path = os.path.abspath(reference_image_path)
+        uploaded_file = client.files.upload(file=abs_path)
+        print(f"  ✓ 图片已上传")
         
         # 组合输入：图片 + 文本描述
-        contents = [reference_image, prompt]
+        contents = [uploaded_file, prompt]
 
         # 生成图片
         response = client.models.generate_content(
@@ -240,15 +269,17 @@ def generate_image_to_video(
         print(f"  输入图片: {image_path}")
         print(f"  提示词: {prompt if prompt else '(无)'}")
         
-        # 从本地文件创建 Image 对象
-        print("📤 加载图片中...")
-        image = types.Image.from_file(location=image_path)
+        # 上传图片到 API
+        print("📤 上传图片中...")
+        abs_path = os.path.abspath(image_path)
+        uploaded_file = client.files.upload(file=abs_path)
+        print(f"  ✓ 图片已上传")
         
         # 发起视频生成请求
         operation = client.models.generate_videos(
             model="veo-3.1-generate-preview",
             prompt=prompt if prompt else "Animate this image naturally",
-            image=image,
+            image=uploaded_file,
             config=types.GenerateVideosConfig(
                 aspect_ratio=aspect_ratio,
                 resolution=resolution,
@@ -311,13 +342,14 @@ def generate_image_with_video(
                 print("⚠️  最多支持 3 张参考图片，将使用前 3 张")
                 image_paths = image_paths[:3]
             
-            print(f"📤 加载 {len(image_paths)} 张参考图片...")
+            print(f"📤 上传 {len(image_paths)} 张参考图片...")
             for img_path in image_paths:
                 if os.path.exists(img_path):
-                    image = types.Image.from_file(location=img_path)
+                    abs_path = os.path.abspath(img_path)
+                    uploaded_file = client.files.upload(file=abs_path)
                     reference_images.append(
                         types.VideoGenerationReferenceImage(
-                            image=image,
+                            image=uploaded_file,
                             reference_type="asset"  # 用于角色、产品等
                         )
                     )

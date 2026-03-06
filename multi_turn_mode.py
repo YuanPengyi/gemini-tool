@@ -16,6 +16,26 @@ load_dotenv()
 
 
 # ============================================================================
+# 辅助函数
+# ============================================================================
+
+def get_image_mime_type(file_path: str) -> str:
+    """
+    根据文件扩展名返回对应的 MIME 类型
+    """
+    ext = os.path.splitext(file_path)[1].lower()
+    mime_types = {
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.bmp': 'image/bmp',
+    }
+    return mime_types.get(ext, 'image/jpeg')
+
+
+# ============================================================================
 # 多轮图片生成
 # ============================================================================
 
@@ -103,8 +123,10 @@ def multi_turn_image_generation() -> None:
 
             # 如果有当前图片，基于它进行优化
             if current_image:
-                reference_image = types.Image.from_file(location=current_image)
-                contents = [reference_image, user_input]
+                print("📤 上传参考图片...")
+                abs_path = os.path.abspath(current_image)
+                uploaded_file = client.files.upload(file=abs_path)
+                contents = [uploaded_file, user_input]
             else:
                 # 首次生成
                 contents = user_input
@@ -246,12 +268,13 @@ def multi_turn_video_generation() -> None:
             elif start_with_image:
                 # 从图片生成
                 print("🖼️  从图片生成视频...")
-                image = types.Image.from_file(location=start_with_image)
+                abs_path = os.path.abspath(start_with_image)
+                uploaded_file = client.files.upload(file=abs_path)
                 
                 operation = client.models.generate_videos(
                     model="veo-3.1-generate-preview",
                     prompt=user_input,
-                    image=image,
+                    image=uploaded_file,
                     config=types.GenerateVideosConfig(
                         aspect_ratio="16:9",
                         resolution="720p",
