@@ -6,18 +6,21 @@
 """
 
 from typing import Optional
-import google.generativeai as genai  # 用于图像生成
-from google import genai as new_genai  # 用于视频生成（新 SDK）
+from google import genai
 from google.genai import types
 import os
 import time
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 
 # ============================================================================
-# 图片生成功能
+# 图片生成功能（使用新的 google.genai SDK）
 # ============================================================================
 
-def generate_image(prompt: str, output_path: str = "output.png") -> None:
+def generate_image(prompt: str, output_path: str = "output.png", aspect_ratio: str = "1:1") -> None:
     """
     文生图 (Text-to-Image) - 单次生成
 
@@ -26,31 +29,51 @@ def generate_image(prompt: str, output_path: str = "output.png") -> None:
     参数:
         prompt: 文本描述 prompt
         output_path: 输出图片保存路径
+        aspect_ratio: 宽高比，如 "1:1", "16:9", "9:16" 等
     """
     try:
-        # 使用图像生成专用模型
-        image_model = genai.GenerativeModel("gemini-2.5-flash-image")
-
+        # 初始化客户端
+        client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        
+        print(f"🎨 开始生成图片...")
+        print(f"  提示词: {prompt[:50]}...")
+        
         # 生成图片
-        response = image_model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "image/png"}
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-image',
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                ),
+            ),
         )
 
         # 保存生成的图片
-        if response.generated_images:
-            image = response.generated_images[0]
-            with open(output_path, "wb") as f:
-                f.write(image.image.bytes)
-            print(f"✓ 图片已保存到: {output_path}")
+        saved = False
+        for part in response.parts:
+            if part.inline_data:
+                generated_image = part.as_image()
+                generated_image.save(output_path)
+                saved = True
+                break
+        
+        if saved:
+            print(f"✅ 图片已保存到: {output_path}")
         else:
-            print("✗ 未能生成图片")
+            print("❌ 未能生成图片")
 
     except Exception as e:
-        print(f"调用出错: {e}")
+        print(f"❌ 调用出错: {e}")
 
 
-def generate_image_from_image(prompt: str, reference_image_path: str, output_path: str = "output.png") -> None:
+def generate_image_from_image(
+    prompt: str, 
+    reference_image_path: str, 
+    output_path: str = "output.png",
+    aspect_ratio: str = "1:1"
+) -> None:
     """
     图文生图 (Image-to-Image)
 
@@ -65,33 +88,54 @@ def generate_image_from_image(prompt: str, reference_image_path: str, output_pat
         prompt: 文本描述 prompt
         reference_image_path: 参考图片路径
         output_path: 输出图片保存路径
+        aspect_ratio: 宽高比，如 "1:1", "16:9", "9:16" 等
     """
     try:
-        image_model = genai.GenerativeModel("gemini-2.5-flash-image")
-
+        if not os.path.exists(reference_image_path):
+            print(f"❌ 参考图片不存在: {reference_image_path}")
+            return
+            
+        # 初始化客户端
+        client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        
+        print(f"🎨 开始图文生图...")
+        print(f"  参考图片: {reference_image_path}")
+        print(f"  提示词: {prompt[:50]}...")
+        
         # 加载参考图片
-        uploaded_image = genai.upload_file(path=reference_image_path)
-
+        reference_image = types.Image.from_file(location=reference_image_path)
+        
         # 组合输入：图片 + 文本描述
-        contents = [uploaded_image, prompt]
+        contents = [reference_image, prompt]
 
         # 生成图片
-        response = image_model.generate_content(
-            contents,
-            generation_config={"response_mime_type": "image/png"}
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-image',
+            contents=contents,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(
+                    aspect_ratio=aspect_ratio,
+                ),
+            ),
         )
 
         # 保存生成的图片
-        if response.generated_images:
-            image = response.generated_images[0]
-            with open(output_path, "wb") as f:
-                f.write(image.image.bytes)
-            print(f"✓ 图文生图完成，已保存到: {output_path}")
+        saved = False
+        for part in response.parts:
+            if part.inline_data:
+                generated_image = part.as_image()
+                generated_image.save(output_path)
+                saved = True
+                break
+        
+        if saved:
+            print(f"✅ 图文生图完成，已保存到: {output_path}")
         else:
-            print("✗ 未能生成图片")
+            print("❌ 未能生成图片")
 
     except Exception as e:
-        print(f"调用出错: {e}")
+        print(f"❌ 调用出错: {e}")
 
 
 # ============================================================================
@@ -122,7 +166,7 @@ def generate_video(
     """
     try:
         # 初始化新 SDK 客户端
-        client = new_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
         
         print(f"🎬 开始生成视频...")
         print(f"  提示词: {prompt[:50]}...")
@@ -190,21 +234,21 @@ def generate_image_to_video(
             return
             
         # 初始化新 SDK 客户端
-        client = new_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
         
         print(f"🎬 开始图生视频...")
         print(f"  输入图片: {image_path}")
         print(f"  提示词: {prompt if prompt else '(无)'}")
         
-        # 上传图片
-        print("📤 上传图片中...")
-        uploaded_image = client.files.upload(path=image_path)
+        # 从本地文件创建 Image 对象
+        print("📤 加载图片中...")
+        image = types.Image.from_file(location=image_path)
         
         # 发起视频生成请求
         operation = client.models.generate_videos(
             model="veo-3.1-generate-preview",
             prompt=prompt if prompt else "Animate this image naturally",
-            image=uploaded_image,
+            image=image,
             config=types.GenerateVideosConfig(
                 aspect_ratio=aspect_ratio,
                 resolution=resolution,
@@ -255,7 +299,7 @@ def generate_image_with_video(
     """
     try:
         # 初始化新 SDK 客户端
-        client = new_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
         
         print(f"🎬 开始多图文生视频...")
         print(f"  提示词: {prompt[:50]}...")
@@ -267,13 +311,13 @@ def generate_image_with_video(
                 print("⚠️  最多支持 3 张参考图片，将使用前 3 张")
                 image_paths = image_paths[:3]
             
-            print(f"📤 上传 {len(image_paths)} 张参考图片...")
+            print(f"📤 加载 {len(image_paths)} 张参考图片...")
             for img_path in image_paths:
                 if os.path.exists(img_path):
-                    uploaded = client.files.upload(path=img_path)
+                    image = types.Image.from_file(location=img_path)
                     reference_images.append(
                         types.VideoGenerationReferenceImage(
-                            image=uploaded,
+                            image=image,
                             reference_type="asset"  # 用于角色、产品等
                         )
                     )
@@ -344,7 +388,7 @@ def extend_video(
             return
             
         # 初始化新 SDK 客户端
-        client = new_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+        client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
         
         print(f"🎬 开始视频扩展...")
         print(f"  输入视频: {video_path}")
@@ -352,7 +396,7 @@ def extend_video(
         
         # 上传视频
         print("📤 上传视频中...")
-        uploaded_video = client.files.upload(path=video_path)
+        uploaded_video = client.files.upload(file=video_path)
         
         # 发起视频扩展请求
         operation = client.models.generate_videos(

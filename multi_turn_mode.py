@@ -5,11 +5,14 @@
 支持：多轮图片生成、多轮视频生成（迭代优化）
 """
 
-import google.generativeai as genai  # 用于图像生成
-from google import genai as new_genai  # 用于视频生成
+from google import genai
 from google.genai import types
 import os
 import time
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
 
 
 # ============================================================================
@@ -33,7 +36,7 @@ def multi_turn_image_generation() -> None:
     - 'exit' - 退出
     """
     print("=" * 60)
-    print("多轮图片生成模式")
+    print("🎨 多轮图片生成模式")
     print("命令提示:")
     print("  - 输入描述词生成新图片")
     print("  - 输入调整需求基于当前图片优化")
@@ -43,7 +46,8 @@ def multi_turn_image_generation() -> None:
     print("  - 'exit' 退出")
     print("=" * 60)
 
-    image_model = genai.GenerativeModel("gemini-2.5-flash-image")
+    # 初始化客户端
+    client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
     current_image = None
     generation_history = []
     version = 0
@@ -82,7 +86,7 @@ def multi_turn_image_generation() -> None:
                     import shutil
                     save_path = f"{save_name}.png"
                     shutil.copy(current_image, save_path)
-                    print(f"✓ 已保存到: {save_path}")
+                    print(f"✅ 已保存到: {save_path}")
                 else:
                     print("还未生成图片")
                 continue
@@ -99,40 +103,49 @@ def multi_turn_image_generation() -> None:
 
             # 如果有当前图片，基于它进行优化
             if current_image:
-                uploaded_image = genai.upload_file(path=current_image)
-                contents = [uploaded_image, user_input]
-                response = image_model.generate_content(
-                    contents,
-                    generation_config={"response_mime_type": "image/png"}
-                )
+                reference_image = types.Image.from_file(location=current_image)
+                contents = [reference_image, user_input]
             else:
                 # 首次生成
-                response = image_model.generate_content(
-                    user_input,
-                    generation_config={"response_mime_type": "image/png"}
-                )
+                contents = user_input
+
+            response = client.models.generate_content(
+                model='gemini-2.5-flash-image',
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    image_config=types.ImageConfig(
+                        aspect_ratio="1:1",
+                    ),
+                ),
+            )
 
             # 保存生成的图片
-            if response.generated_images:
-                image = response.generated_images[0]
-                with open(output_path, "wb") as f:
-                    f.write(image.image.bytes)
-                current_image = output_path
-                generation_history.append({
-                    "version": version,
-                    "prompt": user_input,
-                    "path": output_path
-                })
-                print(f"✓ [版本 {version}] 已生成: {output_path}")
+            saved = False
+            for part in response.parts:
+                if part.inline_data:
+                    generated_image = part.as_image()
+                    generated_image.save(output_path)
+                    current_image = output_path
+                    generation_history.append({
+                        "version": version,
+                        "prompt": user_input,
+                        "path": output_path
+                    })
+                    saved = True
+                    break
+            
+            if saved:
+                print(f"✅ [版本 {version}] 已生成: {output_path}")
             else:
-                print("✗ 生成失败")
+                print("❌ 生成失败")
                 version -= 1
 
         except KeyboardInterrupt:
             print(f"\n\n生成中断，共生成 {version} 个版本")
             break
         except Exception as e:
-            print(f"出错: {e}")
+            print(f"❌ 出错: {e}")
             version -= 1
             continue
 
@@ -168,7 +181,7 @@ def multi_turn_video_generation() -> None:
     print("=" * 70)
 
     # 初始化客户端
-    client = new_genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
+    client = genai.Client(api_key=os.getenv('GOOGLE_API_KEY'))
     
     generation_history = []
     version = 0
@@ -218,7 +231,7 @@ def multi_turn_video_generation() -> None:
             if current_video_path:
                 # 扩展现有视频
                 print("📹 基于上一个视频进行扩展...")
-                uploaded_video = client.files.upload(path=current_video_path)
+                uploaded_video = client.files.upload(file=current_video_path)
                 
                 operation = client.models.generate_videos(
                     model="veo-3.1-generate-preview",
@@ -233,12 +246,12 @@ def multi_turn_video_generation() -> None:
             elif start_with_image:
                 # 从图片生成
                 print("🖼️  从图片生成视频...")
-                uploaded_image = client.files.upload(path=start_with_image)
+                image = types.Image.from_file(location=start_with_image)
                 
                 operation = client.models.generate_videos(
                     model="veo-3.1-generate-preview",
                     prompt=user_input,
-                    image=uploaded_image,
+                    image=image,
                     config=types.GenerateVideosConfig(
                         aspect_ratio="16:9",
                         resolution="720p",

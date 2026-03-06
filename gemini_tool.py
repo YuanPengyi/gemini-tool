@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # multi_turn_chat_programmatic(model, messages)
 
     # 4. 多模态对话
-    # chat_with_image(model, "描述这张图片", ["demo.jpg"])
+    # chat_with_image(model, "描述这张图片", ["1.jpg"])
 
     # 5. 超长上下文
     # chat_with_long_context(model, "总结这个文件", file_path="gemini.py")
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     # ============ 生成模式 ============
     # 单次生成
     # generate_image("一只可爱的小猫在草地上玩耍")
-    # generate_image_from_image("把这幅画变成水彩画风格", "reference.jpg")
+    generate_image_from_image("把这幅画变成水彩画风格", "1.jpg")
     # generate_video("一只狗在海滩上奔跑")
     # generate_image_to_video("input.jpg", "让画面动起来")
     # generate_image_with_video("让场景更具动感", image_paths=["image.jpg"])
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # multi_turn_image_generation()
 
     # 多轮视频生成（持续迭代优化）
-    multi_turn_video_generation()
+    # multi_turn_video_generation()
     
     # 验证模块加载成功
     print("\n✓ 所有模块加载成功！")
